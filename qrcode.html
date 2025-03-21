@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <style>
+        /* CSS Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+        }
+
+        select, input, button {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #qrCode {
+            margin-top: 20px;
+        }
+
+        #downloadBtn {
+            margin-top: 10px;
+            background-color: #007bff;
+        }
+
+        #downloadBtn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator</h1>
+        <form id="qrForm">
+            <label for="qrType">Select QR Type:</label>
+            <select id="qrType">
+                <option value="url">URL</option>
+                <option value="pdf">PDF</option>
+                <option value="multi-url">Multi-URL</option>
+                <option value="contact">Contact</option>
+                <option value="text">Plain Text</option>
+                <option value="app">App</option>
+                <option value="sms">SMS</option>
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+            </select>
+
+            <div id="inputFields">
+                <!-- Dynamic input fields will be inserted here -->
+            </div>
+
+            <button type="submit">Generate QR Code</button>
+        </form>
+
+        <div id="qrCode"></div>
+        <button id="downloadBtn" style="display:none;">Download QR Code</button>
+    </div>
+
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <script>
+        // JavaScript Functionality
+        document.getElementById('qrType').addEventListener('change', function() {
+            const type = this.value;
+            const inputFields = document.getElementById('inputFields');
+            let html = '';
+
+            switch (type) {
+                case 'url':
+                    html = '<label for="url">Enter URL:</label><input type="url" id="url" required>';
+                    break;
+                case 'pdf':
+                    html = '<label for="pdf">Enter PDF URL:</label><input type="url" id="pdf" required>';
+                    break;
+                case 'multi-url':
+                    html = '<label for="multi-url">Enter URLs (comma separated):</label><input type="text" id="multi-url" required>';
+                    break;
+                case 'contact':
+                    html = '<label for="name">Name:</label><input type="text" id="name" required>' +
+                           '<label for="phone">Phone:</label><input type="tel" id="phone" required>';
+                    break;
+                case 'text':
+                    html = '<label for="text">Enter Text:</label><input type="text" id="text" required>';
+                    break;
+                case 'app':
+                    html = '<label for="app">Enter App URL:</label><input type="url" id="app" required>';
+                    break;
+                case 'sms':
+                    html = '<label for="sms-number">Phone Number:</label><input type="tel" id="sms-number" required>' +
+                           '<label for="sms-body">Message:</label><input type="text" id="sms-body" required>';
+                    break;
+                case 'email':
+                    html = '<label for="email">Email Address:</label><input type="email" id="email" required>' +
+                           '<label for="subject">Subject:</label><input type="text" id="subject" required>' +
+                           '<label for="body">Body:</label><input type="text" id="body" required>';
+                    break;
+                case 'phone':
+                    html = '<label for="phone-number">Phone Number:</label><input type="tel" id="phone-number" required>';
+                    break;
+            }
+
+            inputFields.innerHTML = html;
+        });
+
+        document.getElementById('qrForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const type = document.getElementById('qrType').value;
+            let data = '';
+
+            switch (type) {
+                case 'url':
+                    data = document.getElementById('url').value;
+                    break;
+                case 'pdf':
+                    data = document.getElementById('pdf').value;
+                    break;
+                case 'multi-url':
+                    data = document.getElementById('multi-url').value.split(',').join('\n');
+                    break;
+                case 'contact':
+                    const name = document.getElementById('name').value;
+                    const phone = document.getElementById('phone').value;
+                    data = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEND:VCARD`;
+                    break;
+                case 'text':
+                    data = document.getElementById('text').value;
+                    break;
+                case 'app':
+                    data = document.getElementById('app').value;
+                    break;
+                case 'sms':
+                    const smsNumber = document.getElementById('sms-number').value;
+                    const smsBody = document.getElementById('sms-body').value;
+                    data = `SMSTO:${smsNumber}:${smsBody}`;
+                    break;
+                case 'email':
+                    const email = document.getElementById('email').value;
+                    const subject = document.getElementById('subject').value;
+                    const body = document.getElementById('body').value;
+                    data = `MATMSG:TO:${email};SUB:${subject};BODY:${body};;`;
+                    break;
+                case 'phone':
+                    data = `tel:${document.getElementById('phone-number').value}`;
+                    break;
+            }
+
+            generateQRCode(data);
+        });
+
+        function generateQRCode(data) {
+            const qrCodeElement = document.getElementById('qrCode');
+            qrCodeElement.innerHTML = '';
+            new QRCode(qrCodeElement, {
+                text: data,
+                width: 128,
+                height: 128
+            });
+
+            document.getElementById('downloadBtn').style.display = 'block';
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const qrCodeImage = document.getElementById('qrCode').querySelector('img');
+            if (qrCodeImage) {
+                const link = document.createElement('a');
+                link.href = qrCodeImage.src;
+                link.download = 'qrcode.png';
+                link.click();
+            }
+        });
+    </script>
+</body>
+</html>
